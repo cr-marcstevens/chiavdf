@@ -3,6 +3,9 @@
 
 #include "util.h"
 
+#define unlikely(x)    __builtin_expect(!!(x), 0)
+
+
 // Applies to n-weso.
 const int kWindowSize = 20;
 
@@ -86,6 +89,8 @@ class OneWesolowskiCallback: public WesolowskiCallback {
         forms = (form*) calloc(space_needed, sizeof(form));
         form f = form::generator(D);
         forms[0] = f;
+        next_iter = kl;
+        next_pos = 1;
     }
 
     ~OneWesolowskiCallback() {
@@ -94,19 +99,20 @@ class OneWesolowskiCallback: public WesolowskiCallback {
 
     void OnIteration(int type, void *data, uint64_t iteration) {
         iteration++;
-        if (iteration > wanted_iter) 
+        if (unlikely(iteration > wanted_iter))
             return ;
 
-        if (iteration % kl == 0) {
-            uint64_t pos = iteration / kl;
-            form* mulf = &forms[pos];
+        if (unlikely(iteration == next_iter)) {
+            form* mulf = &forms[next_pos];
             SetForm(type, data, mulf);
+            ++next_pos;
+            next_iter += kl;
         }
-        if (iteration == wanted_iter) {
+        if (unlikely(iteration == wanted_iter)) {
             SetForm(type, data, &result);
         }
     }
-
+    uint64_t next_iter, next_pos;
     uint64_t wanted_iter;
     uint32_t kl;
     form result;
@@ -121,6 +127,7 @@ class TwoWesolowskiCallback: public WesolowskiCallback {
         forms[0] = f;
         kl = 10;
         switch_iters = -1;
+        next_iter = kl;
     }
 
     ~TwoWesolowskiCallback() {
@@ -151,14 +158,16 @@ class TwoWesolowskiCallback: public WesolowskiCallback {
 
     void OnIteration(int type, void *data, uint64_t iteration) {
         iteration++;
-        if (iteration % kl == 0) {
+        if (iteration == next_iter) {
             uint64_t pos = GetPosition(iteration);
             form* mulf = &forms[pos];
             SetForm(type, data, mulf);
+            next_iter += kl;
         }
     }
 
   private:
+    uint64_t next_iter;
     uint64_t switch_index;
     int64_t switch_iters;
     uint32_t kl;
