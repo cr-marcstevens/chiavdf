@@ -17,6 +17,10 @@ limitations under the License.
 #ifndef REDUCER_H
 #define REDUCER_H
 
+extern "C" {
+#include "refcode/lzcnt.c"
+}
+
 #include <algorithm>
 #include <array>
 #include <cmath>
